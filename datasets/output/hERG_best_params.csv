@@ -1,0 +1,2 @@
+gcn_layers,gcn_n_units_l0,gcn_n_units_l1,gcn_n_units_l2,mlp_layers,mlp_n_units_l0,mlp_n_units_l1,mlp_n_units_l2,batch_size,optimizer,lr,trial_number
+3,224,112,224,3,80,112,208,64,RMSprop,4.367715017648e-05,22

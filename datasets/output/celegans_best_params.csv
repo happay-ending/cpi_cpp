@@ -1,0 +1,2 @@
+gcn_layers,gcn_n_units_l0,gcn_n_units_l1,mlp_layers,mlp_n_units_l0,batch_size,optimizer,lr,trial_number
+2,256,144,1,112,64,Adam,0.0006714849878603925,24
