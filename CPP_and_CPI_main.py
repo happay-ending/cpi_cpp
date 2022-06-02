@@ -342,7 +342,7 @@ def objective(trial):
 
     scv = StratifiedKFold(n_splits=K, random_state=set_seed(42), shuffle=True)
     fold = 0
-    fold_acc_avg = []
+    fold_auc_avg = []
     for train_index, val_index in scv.split(data_X, data_y):
 
         train_X, val_X = data_X[train_index], data_X[val_index]
@@ -425,19 +425,19 @@ def objective(trial):
                 fold + 1, K, np.mean(history['test_loss']), np.mean(history['test_acc']), np.mean(history['test_auc']),
                 np.mean(history['test_precision']), np.mean(history['test_recall']), np.mean(history['test_f1']),
                 np.mean(history['test_MCC'])))
-        fold_acc_avg.append(np.mean(history['test_acc']))
+        fold_auc_avg.append(np.mean(history['test_auc']))
         fold += 1
-        trial.report(np.mean(fold_acc_avg), fold + 1)
+        trial.report(np.mean(fold_auc_avg), fold + 1)
         # trial.report(np.mean(history['test_acc']), fold + 1)
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
             raise optuna.exceptions.TrialPruned()
 
-    # torch.save(model.state_dict(), file_path + 'output/model/' + file_name +
-    #            '_trial_' + str(trial.number) + '_params.pkl')
-    # return np.mean(history['test_acc'])
+    torch.save(model.state_dict(), file_path + 'output/model/' + file_name +
+               '_trial_' + str(trial.number) + '_params.pkl')
+    # return np.mean(history['test_auc'])
 
-    return np.mean(fold_acc_avg)
+    return np.mean(fold_auc_avg)
 
 
 def file_doc_info():
@@ -445,11 +445,11 @@ def file_doc_info():
     # file_path = './datasets/KIBA/'
     file_name = 'human'
     # file_name = 'celegans'
-    # file_name = 'kiba'
+    # file_name = 'kiba_balanced'
 
     # file_name = 'bace'
     # file_name = 'hERG'
-    # file_name = 'P53'
+    # file_name = 'P53_balanced'
     type = 'cpi'  # cpi or cpp
 
     return file_path, file_name, type
