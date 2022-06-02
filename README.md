@@ -70,7 +70,7 @@ $$
 	\end{aligned}
 \end{equation}
 $$
-where $\sigma(.) $ is activation function, here we use $ReLU$ function, $W^{(i)}$ and $b^{(i)}$ are learnable weight matrices and biases in each layer, $F_{MG}$ and $F_S$ are depth feature matrices learned by MGE and SE,  "$\oplus$" indicates concatenation operation, $h_{i+1}$ is the hidden feature at layer $(i+1)th$. $\hat{h}_{i+1}$ is batch normalization function, $\gamma$ and $\beta$ are learnable parameter vectors of size $C$ (where $C$ is the size of $h_{i+1}$), $\epsilon$ is a constant added to the mini-batch variance for numerical stability. $\hat{h}_{L}$ is the output feature of the last hidden layer.
+where $\sigma(.) $ is activation function, here we use $ReLU$ function, $W^{(i)}$ and $b^{(i)}$ are learnable weight matrices and biases in each layer, $F_{MG}$ and $F_S$ are depth feature matrices learned by MGE and SE,  "$\oplus$" indicates concatenation operation, $h_{i+1}$ is the hidden feature at layer $(i+1)th$. ${\hat{h}}_{i+1}$ is batch normalization function, $\gamma$ and $\beta$ are learnable parameter vectors of size $C$ (where $C$ is the size of $h_{i+1}$), $\epsilon$ is a constant added to the mini-batch variance for numerical stability. $\hat{h}_{L}$ is the output feature of the last hidden layer.
 
 ----
 ## Data Sets Used
