@@ -86,17 +86,65 @@ where $\sigma(.) $ is activation function, here we use $ReLU$ function, $W^{(i)}
 5. **Caenorbabditis elegans** dataset  is from the same source as the Human dataset. It contains 7786 interactions between 1767 unique compounds and 1876 unique proteins.
 6. **KIBA** is derived from a method called KIBA, which combines kinase inhibitor bioactivities from different sources and indicators. It contains 229 unique proteins, 2111 unique drugs, and 118254 interactions.
 
-    | Dataset 	| Targets 	| Compounds 	| Samples 	|  	|
-    |:---:	|:---:	|:---:	|:---:	|:---:	|
-    |  	|  	|  	| Positive 	| Negative 	|
-    | BACE 	| - 	| 1507 	| 691 	| 822 	|
-    | P53 	| - 	| 7460 	| 529 	| 6968 	|
-    | hERG 	| - 	| 9804 	| 4668 	| 5136 	|
-    | Human 	| 2001 	| 2726 	| 3364 	| 3364 	|
-    | C.elegans 	| 1876 	| 1767 	| 3893 	| 3893 	|
-    | KIBA 	| 229 	| 2111 	| 95525 	| 22729 	|
-    |  	|  	|  	|  	|  	|
 
+    <table>
+    <thead>
+    <tr>
+        <th rowspan="2">Dataset</th>
+        <th rowspan="2">Targets</th>
+        <th rowspan="2">Compounds</th>
+        <th colspan="2">Samples</th>
+    </tr>
+    <tr>
+        <th>Positive</th>
+        <th>Negative</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>BACE</td>
+        <td>-</td>
+        <td>1507</td>
+        <td>691</td>
+        <td>822</td>
+    </tr>
+    <tr>
+        <td>P53</td>
+        <td>-</td>
+        <td>7460</td>
+        <td>529</td>
+        <td>6968</td>
+    </tr>
+    <tr>
+        <td>hERG</td>
+        <td>-</td>
+        <td>9804</td>
+        <td>4668</td>
+        <td>5136</td>
+    </tr>
+    <tr>
+        <td>Human</td>
+        <td>2001</td>
+        <td>2726</td>
+        <td>3364</td>
+        <td>3364</td>
+    </tr>
+    <tr>
+        <td>C.elegans</td>
+        <td>1876</td>
+        <td>1767</td>
+        <td>3893</td>
+        <td>3893</td>
+    </tr>
+    <tr>
+        <td>KIBA</td>
+        <td>229</td>
+        <td>2111</td>
+        <td>95525</td>
+        <td>22729</td>
+    </tr>
+    </tbody>
+    </table>
 ----
 
 ## Data File
