@@ -64,7 +64,7 @@ $$h_1=\sigma(b^{(0)}+W^{(0)}(F_{MG}\oplus F_S)) $$
 
 $$h_{i+1}=\sigma(b^{(i)}+W^{(i)}h_{i}) $$
 
-$$\hat{h_{i+1}}= \frac{h_{i+1} - \mathrm{E}[h_{i+1}]}{\sqrt{\mathrm{Var}[h_{i+1}] + \epsilon}} * \gamma + \beta $$
+$$\hat{h}_{i+1}= \frac{h_{i+1} - \mathrm{E}[h_{i+1}]}{\sqrt{\mathrm{Var}[h_{i+1}] + \epsilon}} * \gamma + \beta $$
 
 $$\hat{y}=softmax(\hat{h}_{L})$$
 
