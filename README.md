@@ -41,13 +41,13 @@ The MPNN model is considered as two phases: message passing phase and readout ph
 
 In the message passing phase, the message passing function is defined as follows:
 
-$$h_v^{t+1}=U_t(h_v^t,\sum_{w \in N(v)}M_t(h_v^t,h_w^t,e_{vw})) \tag{1}$$  
+$$\tag{1} h^{t+1}_v=U_t(h_v^t,\sum_{w \in N(v)}M_t(h_v^t,h_w^t,e_{vw}))$$  
 
 where $M_t$ denotes message function, $U_t$ is update function, and $h_v^0=x_v$.
 
 In the readout phase, the readout function $R$ is applied to generate a feature representation of entire graph, which is defined as follows:
 
-$$\hat{y}=R(h_v^T|v \in G) \tag{2}$$
+$$\tag{2} \hat{y}=R(h_v^T|v \in G)$$
 
 Firstly, the initial structural features of molecule are obtained by DGL-LifeSci python package. Secondly, the features of neighboring nodes pass to central node in the form of messages during the message passing phase. After that, the messages of central node are updated with the messages of neighboring nodes and itself. Similarly, MPNN learns features of edges by introducing hidden state information of all edges and using Equation 1. Finally, the message readout phase generates a feature representation of molecule based on hidden states of nodes and edges.
 
