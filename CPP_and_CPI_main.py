@@ -1,12 +1,27 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 '''==============================================
-# @Project : CPI
+# @Project : CPI_CPP
 # @File    : optuna_CPI_CPP.py
 # @IDE     : PyCharm
 # @Author  : Austin
 # @Time    : 2022/3/6 15:08
 ================================================'''
+'''
+Dependencies:
+-	python	3.7.13
+-	torch	1.11.0+cu102
+-	dgl-cuda10.2	0.8.1
+-	dgllife	0.2.9
+-	rdkit	2018.09.3
+-	gensim	4.2.0
+-	networkx	2.2
+-	numpy	1.21.6
+-	pandas	1.3.5
+-	scikit-learn	1.0.2
+-	scipy	1.7.3
+-   optuna 2.10.0
+'''
 import random
 import sys
 import warnings
@@ -33,7 +48,7 @@ from torch import optim
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 
-from mol2vec.features import mol2alt_sentence, DfVec, sentences2vec
+from word2vec.features import mol2alt_sentence, DfVec, sentences2vec
 
 from word2vec.word2vec import seq_to_kmers, get_protein_sequence_embedding
 from gensim.models import Word2Vec
@@ -41,7 +56,7 @@ from gensim.models import Word2Vec
 warnings.filterwarnings("ignore")
 
 
-# define models
+# Define predictor layer
 class mlp_layer(nn.Sequential):
     def __init__(self, in_feats, out_feats, dropout=0.):
         super(mlp_layer, self).__init__()
@@ -56,7 +71,7 @@ class mlp_layer(nn.Sequential):
     def forward(self, feats):
         return self.predict(feats)
 
-
+# Define predictor
 class MLP(nn.Sequential):
     def __init__(self, input_dim, output_dim, hidden_dims_lst, dropout=0.):
         '''
@@ -78,7 +93,7 @@ class MLP(nn.Sequential):
             feats = mlp(feats)
         return self.predictor(feats)
 
-
+# Define deep learning encoder module
 class cpi_cpp_net(nn.Module):
     def __init__(self, node_in_feats_drug, edge_in_feats_drug, node_out_feats_drug=64, edge_hidden_feats_drug=128,
                  num_step_message_passing_drug=6, num_step_set2set_drug=6, num_layer_set2set_drug=3,
@@ -93,6 +108,7 @@ class cpi_cpp_net(nn.Module):
 
         self.predictor = MLP(2 * node_out_feats_drug + in_feats_protein, 2, mlp_hidden_feats)
 
+
     def forward(self, bg_drug, node_feats_drug, edge_feats_drug, feats_protein):
         node_feats = self.gnn_drug(bg_drug, node_feats_drug, edge_feats_drug)
         graph_feats_drug = self.readout(bg_drug, node_feats)
@@ -101,22 +117,19 @@ class cpi_cpp_net(nn.Module):
         return interaction
 
 
-# define metric function
+# Define metric function
 def metric_function(y_true, y_pred, y_score):
     acc = metrics.accuracy_score(y_true, y_pred, normalize=True)
     precision = metrics.precision_score(y_true, y_pred)
     recall = metrics.recall_score(y_true, y_pred)
     f1 = metrics.f1_score(y_true, y_pred)
-    # The kappa score is a number between (-1, 1). A score > 0.8 means a good classification; 0 or lower means
-    # a bad one (actually a random label)
-    kappa = metrics.cohen_kappa_score(y_true, y_pred)
-    # ROC curve and AUC were calculated
-    fpr, tpr, _ = metrics.roc_curve(y_true, y_score)
+    mcc = metrics.matthews_corrcoef(y_true, y_pred)
+    # fpr, tpr, _ = metrics.roc_curve(y_true, y_score)
     auc = metrics.roc_auc_score(y_true, y_score)
-    return acc, auc, precision, recall, f1, kappa
+    return acc, auc, precision, recall, f1, mcc
 
 
-# define train function
+# Define train function
 def train_epoch(model, device, dataloader, criterion, optimizer):
     train_y_true = []
     train_y_pred = []
@@ -139,20 +152,20 @@ def train_epoch(model, device, dataloader, criterion, optimizer):
 
         train_epoch_loss += loss.detach().item()
         pred = logits.argmax(dim=1)
-        score = torch.select(logits, 1, 1)  # 第一个参数为索引的维度,取第1个维度中索引为1的值
+        score = torch.select(logits, 1, 1)
 
         train_y_true += labels.to('cpu').numpy().flatten().tolist()
         train_y_pred += pred.to('cpu').detach().numpy().flatten().tolist()
         train_y_score += score.to('cpu').detach().numpy().flatten().tolist()
 
     train_epoch_loss /= (batch_idx + 1)
-    train_acc, train_auc, train_precision, train_recall, train_f1, train_Kappa = metric_function(
+    train_acc, train_auc, train_precision, train_recall, train_f1, train_MCC = metric_function(
         y_true=train_y_true, y_pred=train_y_pred, y_score=train_y_score)
 
-    return train_epoch_loss, train_acc, train_auc, train_precision, train_recall, train_f1, train_Kappa
+    return train_epoch_loss, train_acc, train_auc, train_precision, train_recall, train_f1, train_MCC
 
 
-# define valid function
+# Define valid function
 def valid_epoch(model, device, dataloader, criterion):
     test_y_true = []
     test_y_pred = []
@@ -175,17 +188,17 @@ def valid_epoch(model, device, dataloader, criterion):
 
             test_epoch_loss += loss.detach().item()
             pred = logits.argmax(dim=1)
-            score = torch.select(logits, 1, 1)  # 第一个参数为索引的维度,取第1个维度中索引为1的值
+            score = torch.select(logits, 1, 1)
 
             test_y_true += labels.to('cpu').numpy().flatten().tolist()
             test_y_pred += pred.to('cpu').detach().numpy().flatten().tolist()
             test_y_score += score.to('cpu').detach().numpy().flatten().tolist()
 
     test_epoch_loss /= (batch_idx + 1)
-    test_acc, test_auc, test_precision, test_recall, test_f1, test_Kappa = metric_function(
+    test_acc, test_auc, test_precision, test_recall, test_f1, test_MCC = metric_function(
         y_true=test_y_true, y_pred=test_y_pred, y_score=test_y_score)
 
-    return test_epoch_loss, test_acc, test_auc, test_precision, test_recall, test_f1, test_Kappa
+    return test_epoch_loss, test_acc, test_auc, test_precision, test_recall, test_f1, test_MCC
 
 
 # Define collate function
@@ -196,7 +209,7 @@ def collate(sample):
     batched_graph.set_e_initializer(dgl.init.zero_initializer)
     return batched_graph, torch.tensor(np.array(protein_vector)), torch.tensor(labels)
 
-
+# Seed function
 def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -257,8 +270,7 @@ def read_cpi_raw_data(file_path, file_name):
         labels = np.array(labels, dtype=np.int64)
 
         df_ligands = pd.read_csv(file_path + 'ligands_smiles.csv')
-        df_compound_info = pd.merge(lefleft=df['cid'], right=df_ligands, on='cid', how='left')  # cid,smiles
-
+        df_compound_info = pd.merge(left=df['cid'], right=df_ligands, on='cid', how='left')  # cid,smiles
 
         df_proteins = pd.read_csv(file_path + 'protein_seq.csv')
 
@@ -298,7 +310,7 @@ def get_compound_graph(train_smiles):
 
 def get_protein_vec(train_sequence):
     proteins = []
-    model = Word2Vec.load("./word2vec/word2vec_30.model")
+    model = Word2Vec.load("./word2vec/models/word2vec_30.model")
     for each in train_sequence:
         protein_embedding = get_protein_sequence_embedding(model, seq_to_kmers(each))
         proteins.append(protein_embedding)
@@ -308,7 +320,7 @@ def get_protein_vec(train_sequence):
 
 def get_compound_sequenc_vec(train_sequence):
     aas = [Chem.MolFromSmiles(x) for x in train_sequence]
-    model = Word2Vec.load('./mol2vec/models/model_300dim.pkl')
+    model = Word2Vec.load('./word2vec/models/model_300dim.pkl')
     aa_sentences = [mol2alt_sentence(x, 1) for x in aas]
     mol2vec = [DfVec(x) for x in sentences2vec(aa_sentences, model, unseen='UNK')]
     sequence_vec = np.array([x.vec for x in mol2vec], dtype=np.float32)
@@ -332,8 +344,6 @@ def objective(trial):
     fold = 0
     fold_acc_avg = []
     for train_index, val_index in scv.split(data_X, data_y):
-        print('Fold {}'.format(fold + 1))
-        #         print("\n TEST index:  ", val_index[:10], "\n TRAIN index: ", train_index[:10])
 
         train_X, val_X = data_X[train_index], data_X[val_index]
         train_y, val_y = data_y[train_index], data_y[val_index]
@@ -370,31 +380,22 @@ def objective(trial):
         test_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, collate_fn=collate, drop_last=False)
 
         history = {'train_loss': [], 'train_acc': [], 'train_auc': [], 'train_precision': [], 'train_recall': [],
-                   'train_f1': [], 'train_Kappa': [
+                   'train_f1': [], 'train_MCC': [
             ], 'test_loss': [], 'test_acc': [], 'test_auc': [], 'test_precision': [], 'test_recall': [], 'test_f1': [],
-                   'test_Kappa': []}
+                   'test_MCC': []}
 
         for epoch in range(EPOCHS):
-            train_loss, train_acc, train_auc, train_precision, train_recall, train_f1, train_Kappa = train_epoch(
+            train_loss, train_acc, train_auc, train_precision, train_recall, train_f1, train_MCC = train_epoch(
                 model, device, train_loader, criterion, optimizer)
-            test_loss, test_acc, test_auc, test_precision, test_recall, test_f1, test_Kappa = valid_epoch(
+            test_loss, test_acc, test_auc, test_precision, test_recall, test_f1, test_MCC = valid_epoch(
                 model, device, test_loader, criterion)
-            # print(
-            #     '{:5} | Epoch: {:2}/{:2} | Loss: {:.5f} | Acc: {:.5f} | AUC:{:.5f} | Precision:{:.5f} | Recall:{:.5f} | F1:{:.5f} | Kappa:{:.5f}'.format(
-            #         "Train", epoch + 1, EPOCHS, train_loss, train_acc, train_auc, train_precision, train_recall,
-            #         train_f1, train_Kappa))
-            # print(
-            #     '{:5} | Epoch: {:2}/{:2} | Loss: {:.5f} | Acc: {:.5f} | AUC:{:.5f} | Precision:{:.5f} | Recall:{:.5f} | F1:{:.5f} | Kappa:{:.5f}'.format(
-            #         "Test", epoch + 1, EPOCHS, test_loss, test_acc, test_auc, test_precision, test_recall, test_f1,
-            #         test_Kappa))
 
             ###Save the cross-validation test epoch results for each trial
-            columns_name = ['trial', 'fold', 'epoch', 'loss', 'acc', 'auc', 'precision', 'recall', 'f1', 'kappa']
+            columns_name = ['trial', 'fold', 'epoch', 'loss', 'acc', 'auc', 'precision', 'recall', 'f1', 'MCC']
             columns_list = [trial.number, fold, epoch, test_loss, test_acc, test_auc, test_precision, test_recall,
-                            test_f1, test_Kappa]
+                            test_f1, test_MCC]
             save_data = pd.DataFrame(data=[columns_list], columns=columns_name)
-            save_data.to_csv(file_path + file_name + '_optuna_results.csv', index=False, mode='a', header=None)
-            ######################################
+            save_data.to_csv(file_path + 'output/'+ file_name + '_optuna_results.csv', index=False, mode='a', header=None)
 
             history['train_loss'].append(train_loss)
             history['train_acc'].append(train_acc)
@@ -402,28 +403,28 @@ def objective(trial):
             history['train_precision'].append(train_precision)
             history['train_recall'].append(train_recall)
             history['train_f1'].append(train_f1)
-            history['train_Kappa'].append(train_Kappa)
+            history['train_MCC'].append(train_MCC)
             history['test_loss'].append(test_loss)
             history['test_acc'].append(test_acc)
             history['test_auc'].append(test_auc)
             history['test_precision'].append(test_precision)
             history['test_recall'].append(test_recall)
             history['test_f1'].append(test_f1)
-            history['test_Kappa'].append(test_Kappa)
+            history['test_MCC'].append(test_MCC)
 
         print('Performance of No.{} fold '.format(fold + 1))
         print(
-            '{:5} | Flod:  {:2}/{:2} | Loss: {:.5f} | Acc: {:.5f} | AUC:{:.5f} | Precision:{:.5f} | Recall:{:.5f} | F1:{:.5f} | Kappa:{:.5f}'.format(
+            '{:5} | Fold:  {:2}/{:2} | Loss: {:.5f} | Acc: {:.5f} | AUC:{:.5f} | Precision:{:.5f} | Recall:{:.5f} | F1:{:.5f} | MCC:{:.5f}'.format(
                 "Train",
                 fold + 1, K, np.mean(history['train_loss']), np.mean(history['train_acc']),
                 np.mean(history['train_auc']), np.mean(history['train_precision']), np.mean(history['train_recall']),
-                np.mean(history['train_f1']), np.mean(history['train_Kappa'])))
+                np.mean(history['train_f1']), np.mean(history['train_MCC'])))
         print(
-            '{:5} | Flod:  {:2}/{:2} | Loss: {:.5f} | Acc: {:.5f} | AUC:{:.5f} | Precision:{:.5f} | Recall:{:.5f} | F1:{:.5f} | Kappa:{:.5f}'.format(
+            '{:5} | Fold:  {:2}/{:2} | Loss: {:.5f} | Acc: {:.5f} | AUC:{:.5f} | Precision:{:.5f} | Recall:{:.5f} | F1:{:.5f} | MCC:{:.5f}'.format(
                 "Test",
                 fold + 1, K, np.mean(history['test_loss']), np.mean(history['test_acc']), np.mean(history['test_auc']),
                 np.mean(history['test_precision']), np.mean(history['test_recall']), np.mean(history['test_f1']),
-                np.mean(history['test_Kappa'])))
+                np.mean(history['test_MCC'])))
         fold_acc_avg.append(np.mean(history['test_acc']))
         fold += 1
         trial.report(np.mean(fold_acc_avg), fold + 1)
@@ -432,7 +433,7 @@ def objective(trial):
         if trial.should_prune():
             raise optuna.exceptions.TrialPruned()
 
-    # torch.save(model.state_dict(), file_path + 'model/' + file_name +
+    # torch.save(model.state_dict(), file_path + 'output/model/' + file_name +
     #            '_trial_' + str(trial.number) + '_params.pkl')
     # return np.mean(history['test_acc'])
 
@@ -444,11 +445,11 @@ def file_doc_info():
     # file_path = './datasets/KIBA/'
     file_name = 'human'
     # file_name = 'celegans'
-    # file_name = 'kiba_balanced'
+    # file_name = 'kiba'
 
     # file_name = 'bace'
     # file_name = 'hERG'
-    # file_name = 'P53_balanced'
+    # file_name = 'P53'
     type = 'cpi'  # cpi or cpp
 
     return file_path, file_name, type
@@ -498,12 +499,7 @@ if __name__ == '__main__':
     print(study.best_trial.intermediate_values)
     best_params = pd.DataFrame.from_dict([study.best_params])
     best_params['trial_number'] = study.best_trial.number
-    best_params.to_csv(file_path + file_name + '_best_params.csv', index=False)
+    best_params.to_csv(file_path + 'output/'+ file_name + '_best_params.csv', index=False)
     intermediate_values = pd.DataFrame.from_dict([study.best_trial.intermediate_values])
-    intermediate_values.to_csv(file_path + file_name + '_intermediate_values.csv', index=False)
+    intermediate_values.to_csv(file_path +'output/'+ file_name + '_intermediate_values.csv', index=False)
 
-    # optuna.visualization.plot_intermediate_values(study)
-    # optuna.visualization.plot_param_importances(study)
-    # optuna.visualization.plot_optimization_history(study)
-    # optuna.visualization.plot_contour(study)
-    # optuna.visualization.plot_slice(study)
