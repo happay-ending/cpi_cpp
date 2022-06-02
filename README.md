@@ -18,6 +18,7 @@ This repository contains a brief description of the paper, source code, data and
 ## Overview of MG-S
 
 ![Overview of MG-S](architecture.png)
+
 MG-S consists of three modules, namely molecular featureization, deep learning encoder and predictor module. The deep learning encoder module consists of two concurrently executed submodules: MGE and SE. In molecular property prediction, MGE is used to learn the molecular structure of compounds and SE is employed to extract organ fingerprint feature of compounds and convert them into  deep feature descriptor. Finally, the deep feature descriptors are sent to predictor for classification. In CPI prediction, MGE is utilized to learn the molecular structure of compounds and SE is used to learn amino acid sequence fingerprints of the relevant proteins, then convert them into the matrix and sent this new feature descriptors to predictor.
 
 (A) In MGE sub-module, each small molecule is represented with $d$-dim vectors $v \in V^{n \times d} $ via molecular graph embedding. 
@@ -62,13 +63,13 @@ The predictor module consists of a multilayer perceptron. In the experiments, th
 
 $h_1=\sigma(b^{(0)}+W^{(0)}(F_{MG}\oplus F_S))$
 
-$h_{i+1}=\sigma(b^{(i)}+W^{(i)}h_{i}) $
+$h_{i+1}=\sigma(b^{(i)}+W^{(i)}h_{i})$
 
-$\hat{h}_{i+1}= \frac{h_{i+1} - \mathrm{E}[h_{i+1}]}{\sqrt{\mathrm{Var}[h_{i+1}] + \epsilon}} * \gamma + \beta $
+$\hat{h}_{i+1}= \frac{h_{i+1} - \mathrm{E}[h_{i+1}]}{\sqrt{\mathrm{Var}[h_{i+1}] + \epsilon}} * \gamma + \beta$
 
 $\hat{y}=softmax(\hat{h}_{L})$
 
-where $\sigma(.) $ is activation function, here we use $ReLU$ function, $W^{(i)}$ and $b^{(i)}$ are learnable weight matrices and biases in each layer, $F_{MG}$ and $F_S$ are depth feature matrices learned by MGE and SE,  ``$\oplus$'' indicates concatenation operation, $h_{i+1}$ is the hidden feature at layer $(i+1)th$. $\hat{h}_{i+1}$ is batch normalization function, $\gamma$ and $\beta$ are learnable parameter vectors of size $C$ (where $C$ is the size of $h_{i+1}$), $\epsilon$ is a constant added to the mini-batch variance for numerical stability. $\hat{h}_{L}$ is the output feature of the last hidden layer.
+where $\sigma(.) $ is activation function, here we use $ReLU$ function, $W^{(i)}$ and $b^{(i)}$ are learnable weight matrices and biases in each layer, $F_{MG}$ and $F_S$ are depth feature matrices learned by MGE and SE,  "$\oplus$" indicates concatenation operation, $h_{i+1}$ is the hidden feature at layer $(i+1)th$. $\hat{h}_{i+1}$ is batch normalization function, $\gamma$ and $\beta$ are learnable parameter vectors of size $C$ (where $C$ is the size of $h_{i+1}$), $\epsilon$ is a constant added to the mini-batch variance for numerical stability. $\hat{h}_{L}$ is the output feature of the last hidden layer.
 
 ----
 ## Data Sets Used
