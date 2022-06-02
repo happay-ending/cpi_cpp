@@ -142,6 +142,6 @@ Run the program using the following command:
 python CPP_and_CPI_main.py
 ```
 
-**notes**: The paths and names of the six datasets are defined in the file_doc_info function body of the python CPP_and_CPI_main.py file (lines 443-455), and the corresponding dataset programs can be executed by replacing the file paths and filenames as needed. 
+**notes**: The paths and names of the six datasets are defined in the file_doc_info function body of the python CPP_and_CPI_main.py file (lines 443-455), and the corresponding dataset programs can be executed by replacing the file paths, filenames, and "type" variable as needed. 
 
 The results are stored in the `output` folder after the program is run, and the training model parameters are stored in `output/model/`. 
