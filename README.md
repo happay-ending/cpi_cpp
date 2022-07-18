@@ -165,6 +165,7 @@ datasets/word2vec/: contains sequence-based pre-trained models.</br>
 datasets/output/: contains the results of the experiments.</br>
 datasets/KIBA/output:contains the results of KIBA.</br>
 
+data_preprocessing.py ： Data preprocessing. Weighted random sampling for unbalanced data sets.
 CPP_and_CPI_main.py ： the program file used in the paper.
 
 ----
